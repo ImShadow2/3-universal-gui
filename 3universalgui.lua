@@ -136,23 +136,33 @@ speedInput.FocusLost:Connect(function(enterPressed)
 end)
 
 -- INSTANT INTERACTION
-local instantConn
-local function setInstantPrompt(state)
-    if state then
-        for _, v in ipairs(Workspace:GetDescendants()) do
-            if v:IsA("ProximityPrompt") then
-                v.HoldDuration = 0.0001
-            end
-        end
-        instantConn = Workspace.DescendantAdded:Connect(function(desc)
-            if desc:IsA("ProximityPrompt") then
-                desc.HoldDuration = 0.0001
-            end
-        end)
-    else
-        if instantConn then instantConn:Disconnect() end
-    end
+local function makePromptInstant(prompt)
+	if prompt:IsA("ProximityPrompt") then
+		prompt.HoldDuration = 0
+		prompt.RequiresLineOfSight = false
+		prompt.Enabled = true
+		
+		-- Reapply automatically if any property resets
+		prompt:GetPropertyChangedSignal("HoldDuration"):Connect(function()
+			if prompt.HoldDuration ~= 0 then
+				prompt.HoldDuration = 0
+			end
+		end)
+	end
 end
+
+-- Apply to all current prompts
+for _, v in ipairs(Workspace:GetDescendants()) do
+	makePromptInstant(v)
+end
+
+-- Detect new or replaced prompts
+Workspace.DescendantAdded:Connect(function(descendant)
+	if descendant:IsA("ProximityPrompt") then
+		makePromptInstant(descendant)
+	end
+end)
+
 
 -- ESP TELEPORT TOOL
 local espButtons = {}
