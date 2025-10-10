@@ -103,7 +103,7 @@ local function setSpeed(state)
         end
         speedLoop = RunService.Stepped:Connect(function()
             local h = getHumanoid()
-            if h and h.WalkSpeed ~= customSpeed then
+            if h and h.WalkSpeed == defaultSpeed then
                 h.WalkSpeed = customSpeed
             end
         end)
@@ -135,53 +135,34 @@ speedInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- INSTANT INTERACTION (Toggleable)
-local instantActive = false
-local instantConnections = {}
-
-local function makePromptInstant(prompt)
-	if prompt:IsA("ProximityPrompt") then
-		prompt.HoldDuration = 0.0001
-		prompt.RequiresLineOfSight = false
-		prompt.Enabled = true
-
-		local c = prompt:GetPropertyChangedSignal("HoldDuration"):Connect(function()
-			if instantActive and prompt.HoldDuration ~= 0 then
-				prompt.HoldDuration = 0.0001
-			end
-		end)
-		table.insert(instantConnections, c)
-	end
-end
+-- INSTANT INTERACTION
+local instantConn -- track the listener
 
 local function setInstantPrompt(state)
-	instantActive = state
-	if state then
-		-- Apply to all current prompts
-		for _, v in ipairs(Workspace:GetDescendants()) do
-			makePromptInstant(v)
-		end
-		-- Detect new prompts
-		local c = Workspace.DescendantAdded:Connect(function(descendant)
-			if instantActive and descendant:IsA("ProximityPrompt") then
-				makePromptInstant(descendant)
-			end
-		end)
-		table.insert(instantConnections, c)
-	else
-		-- Disconnect all instant connections and restore defaults
-		for _, c in ipairs(instantConnections) do
-			if c.Connected then c:Disconnect() end
-		end
-		instantConnections = {}
+    if state then
+        -- Apply to all existing prompts
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                v.HoldDuration = 0.000091
+            end
+        end
 
-		-- Restore default hold duration
-		for _, v in ipairs(Workspace:GetDescendants()) do
-			if v:IsA("ProximityPrompt") then
-				v.HoldDuration = 0.5 -- default Roblox time
-			end
-		end
-	end
+        -- Disconnect old listener if exists
+        if instantConn then instantConn:Disconnect() end
+
+        -- Listen for all new prompts continuously
+        instantConn = Workspace.DescendantAdded:Connect(function(desc)
+            if desc:IsA("ProximityPrompt") then
+                desc.HoldDuration = 0.000001
+            end
+        end)
+    else
+        -- Toggle OFF: stop listening
+        if instantConn then
+            instantConn:Disconnect()
+            instantConn = nil
+        end
+    end
 end
 
 -- ESP TELEPORT TOOL
