@@ -141,13 +141,13 @@ local instantConnections = {}
 
 local function makePromptInstant(prompt)
 	if prompt:IsA("ProximityPrompt") then
-		prompt.HoldDuration = 0
+		prompt.HoldDuration = 0.0001
 		prompt.RequiresLineOfSight = false
 		prompt.Enabled = true
 
 		local c = prompt:GetPropertyChangedSignal("HoldDuration"):Connect(function()
 			if instantActive and prompt.HoldDuration ~= 0 then
-				prompt.HoldDuration = 0
+				prompt.HoldDuration = 0.0001
 			end
 		end)
 		table.insert(instantConnections, c)
