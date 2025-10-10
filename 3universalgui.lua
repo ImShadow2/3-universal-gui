@@ -152,10 +152,20 @@ local function setInstantPrompt(state)
 
         -- Listen for all new prompts continuously
         instantConn = Workspace.DescendantAdded:Connect(function(desc)
-            if desc:IsA("ProximityPrompt") then
-                desc.HoldDuration = 0.000001
-            end
-        end)
+		    -- direct prompt
+		    if desc:IsA("ProximityPrompt") then
+		        desc.HoldDuration = 0.000091
+		    end
+		    -- if a folder/model is added, apply to all nested prompts
+		    if desc:IsA("Model") or desc:IsA("Folder") then
+		        for _, v in ipairs(desc:GetDescendants()) do
+		            if v:IsA("ProximityPrompt") then
+		                v.HoldDuration = 0.000091
+		            end
+		        end
+		    end
+		end)
+
     else
         -- Toggle OFF: stop listening
         if instantConn then
